@@ -3,6 +3,7 @@ package helium314.keyboard.keyboard.internal.keyboard_parser
 
 import android.content.Context
 import android.content.res.Configuration
+import android.view.Surface
 import helium314.keyboard.keyboard.internal.KeyboardParams
 import helium314.keyboard.keyboard.internal.keyboard_parser.floris.AbstractKeyData
 import helium314.keyboard.keyboard.internal.keyboard_parser.floris.AutoTextKeyData
@@ -56,10 +57,19 @@ object LayoutParser {
     /** Use the PC-inspired German layout only on wide tablets in landscape. */
     fun isGermanTabletPcLayout(params: KeyboardParams, context: Context): Boolean {
         val mainLayout = params.mId.subtype.mainLayoutName
-        return params.mId.subtype.locale.language == "de"
-            && mainLayout.startsWith("qwertz")
-            && Settings.getInstance().isTablet
-            && context.resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+        val language = params.mId.subtype.locale.language
+        val isTablet = Settings.getInstance().isTablet
+        val resOrientation = context.resources.configuration.orientation
+        val settingsOrientation = Settings.getValues().mDisplayOrientation
+        val rotation = context.display?.rotation ?: -1
+        // Configuration.ORIENTATION_LANDSCAPE == 2, Surface.ROTATION_90/270 are the landscape rotations
+        val landscape = resOrientation == Configuration.ORIENTATION_LANDSCAPE
+            || settingsOrientation == Configuration.ORIENTATION_LANDSCAPE
+            || rotation == Surface.ROTATION_90
+            || rotation == Surface.ROTATION_270
+        val result = language == "de" && mainLayout.startsWith("qwertz") && isTablet && landscape
+        Log.i(TAG, "isGermanTabletPcLayout: lang=$language layout=$mainLayout tablet=$isTablet resOrientation=$resOrientation settingsOrientation=$settingsOrientation rotation=$rotation landscape=$landscape -> $result")
+        return result
     }
 
     /**

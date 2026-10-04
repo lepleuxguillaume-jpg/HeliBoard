@@ -734,6 +734,9 @@ public class LatinIME extends InputMethodService implements
         if (settingsValues.mDisplayOrientation != conf.orientation) {
             mHandler.startOrientationChanging();
             mInputLogic.onOrientationChange(mSettings.getCurrent());
+            // the german PC layout is landscape-only, so it must be re-parsed after a rotation
+            // (upstream has no orientation-dependent layouts and never needed this)
+            mKeyboardSwitcher.reloadKeyboard();
         }
         if (settingsValues.mHasHardwareKeyboard != Settings.readHasHardwareKeyboard(conf)) {
             // If the state of having a hardware keyboard changed, then we want to reload the
