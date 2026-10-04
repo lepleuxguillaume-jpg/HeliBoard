@@ -18,6 +18,7 @@ import helium314.keyboard.keyboard.internal.keyboard_parser.floris.ShiftStateSel
 import helium314.keyboard.keyboard.internal.keyboard_parser.floris.TextKeyData
 import helium314.keyboard.keyboard.internal.keyboard_parser.floris.VariationSelector
 import helium314.keyboard.keyboard.internal.keyboard_parser.floris.toTextKey
+import helium314.keyboard.latin.R
 import helium314.keyboard.latin.common.splitOnWhitespace
 import helium314.keyboard.latin.settings.Settings
 import helium314.keyboard.latin.utils.LayoutType
@@ -58,7 +59,12 @@ object LayoutParser {
     fun isGermanTabletPcLayout(params: KeyboardParams, context: Context): Boolean {
         val mainLayout = params.mId.subtype.mainLayoutName
         val language = params.mId.subtype.locale.language
-        val isTablet = Settings.getInstance().isTablet
+        // the resource bucket alone is unreliable inside the IME service (it can read as
+        // "not a tablet" even on a ~1000dp tablet), so also accept the raw width
+        val isTabletResource = Settings.getInstance().isTablet
+        val smallestWidthDp = context.resources.configuration.smallestScreenWidthDp
+        val screenMetrics = context.resources.getInteger(R.integer.config_screen_metrics)
+        val isTablet = isTabletResource || smallestWidthDp >= 600
         val resOrientation = context.resources.configuration.orientation
         val settingsOrientation = Settings.getValues().mDisplayOrientation
         val rotation = context.display?.rotation ?: -1
@@ -67,8 +73,10 @@ object LayoutParser {
             || settingsOrientation == Configuration.ORIENTATION_LANDSCAPE
             || rotation == Surface.ROTATION_90
             || rotation == Surface.ROTATION_270
-        val result = language == "de" && mainLayout.startsWith("qwertz") && isTablet && landscape
-        Log.i(TAG, "isGermanTabletPcLayout: lang=$language layout=$mainLayout tablet=$isTablet resOrientation=$resOrientation settingsOrientation=$settingsOrientation rotation=$rotation landscape=$landscape -> $result")
+        // the layout is German QWERTZ by design, so it no longer depends on the active
+        // subtype: multilingual typing comes from the dictionaries, not from the layout
+        val result = isTablet && landscape
+        Log.i(TAG, "isGermanTabletPcLayout: lang=$language layout=$mainLayout tabletResource=$isTabletResource sswd=$smallestWidthDp screenMetrics=$screenMetrics tablet=$isTablet resOrientation=$resOrientation settingsOrientation=$settingsOrientation rotation=$rotation landscape=$landscape -> $result")
         return result
     }
 
