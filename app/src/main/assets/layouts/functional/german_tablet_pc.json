@@ -1,0 +1,26 @@
+// Keep the bottom modifier/space row aligned with the desktop blocks.
+[
+  [{ "type": "placeholder" }],
+  [{ "type": "placeholder" }],
+  [{ "type": "placeholder" }],
+  [{ "type": "placeholder" }],
+  [{ "type": "placeholder" }],
+  [
+    { "label": "ctrl", "type": "function", "width": 0.07 },
+    { "label": "meta", "type": "function", "width": 0.06 },
+    { "label": "alt", "type": "function", "width": 0.065 },
+    { "label": "space", "type": "space", "width": 0.30 },
+    { "label": "fn", "type": "function", "width": 0.05 },
+    { "label": "AltGr", "code": -3, "type": "function", "width": 0.065 },
+    { "label": "ctrl", "type": "function", "width": 0.05 },
+    { "type": "placeholder", "width": 0.025 },
+    { "type": "placeholder", "width": 0.025 },
+    { "type": "placeholder", "width": 0.036667 },
+    { "type": "placeholder", "width": 0.036667 },
+    { "type": "placeholder", "width": 0.036666 },
+    { "type": "placeholder", "width": 0.025 },
+    { "label": "0", "width": 0.09 },
+    { "label": "comma", "type": "function", "width": 0.045 },
+    { "label": "period", "type": "function", "width": 0.045 }
+  ]
+]

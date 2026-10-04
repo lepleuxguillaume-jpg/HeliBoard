@@ -2,6 +2,7 @@
 package helium314.keyboard.keyboard.internal.keyboard_parser
 
 import android.content.Context
+import android.content.res.Configuration
 import helium314.keyboard.keyboard.internal.KeyboardParams
 import helium314.keyboard.keyboard.internal.keyboard_parser.floris.AbstractKeyData
 import helium314.keyboard.keyboard.internal.keyboard_parser.floris.AutoTextKeyData
@@ -37,8 +38,12 @@ object LayoutParser {
     fun parseLayout(layoutType: LayoutType, params: KeyboardParams, context: Context): MutableList<MutableList<KeyData>> {
         if (layoutType == LayoutType.FUNCTIONAL && !params.mId.element.takesFunctionalKeys)
             return mutableListOf(mutableListOf()) // no functional keys
-        val layoutName = if (layoutType == LayoutType.MAIN) params.mId.subtype.mainLayoutName
-            else params.mId.subtype.layouts[layoutType] ?: Settings.readDefaultLayoutName(layoutType, context.prefs())
+        val layoutName = when {
+            isGermanTabletPcLayout(params, context) && layoutType == LayoutType.MAIN -> "german_tablet_pc"
+            isGermanTabletPcLayout(params, context) && layoutType == LayoutType.FUNCTIONAL -> "german_tablet_pc"
+            layoutType == LayoutType.MAIN -> params.mId.subtype.mainLayoutName
+            else -> params.mId.subtype.layouts[layoutType] ?: Settings.readDefaultLayoutName(layoutType, context.prefs())
+        }
         return layoutCache.getOrPut(layoutType.name + layoutName) {
             createCacheLambda(layoutType, layoutName, context)
         }(params).apply {
@@ -46,6 +51,15 @@ object LayoutParser {
             // todo: actually the symbols / numberLabels should be handled in a better way that doesn't change the popupSet
             forEach { row -> row.forEach { it.popup.symbol = null; it.popup.numberLabel = null } }
         }
+    }
+
+    /** Use the PC-inspired German layout only on wide tablets in landscape. */
+    fun isGermanTabletPcLayout(params: KeyboardParams, context: Context): Boolean {
+        val mainLayout = params.mId.subtype.mainLayoutName
+        return params.mId.subtype.locale.language == "de"
+            && mainLayout.startsWith("qwertz")
+            && Settings.getInstance().isTablet
+            && context.resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
     }
 
     /**

@@ -102,9 +102,11 @@ class KeyboardParser(private val params: KeyboardParams, private val context: Co
 
         val numberRow = getNumberRow()
         addNumberRowOrPopupKeys(baseKeys, numberRow)
-        if (element.isAlphabet)
+        val germanTabletPcLayout = LayoutParser.isGermanTabletPcLayout(params, context)
+        if (element.isAlphabet && !germanTabletPcLayout)
             addSymbolPopupKeys(baseKeys)
-        if (element.isAlphaOrSymbol && params.mId.numberRowEnabled) {
+        if (element.isAlphaOrSymbol && params.mId.numberRowEnabled
+            && !(element.isAlphabet && germanTabletPcLayout)) {
             val newLabelFlags = defaultLabelFlags or
                     if (Settings.getValues().mShowNumberRowHints) 0 else Key.LABEL_FLAGS_DISABLE_HINT_LABEL
             baseKeys.add(0, numberRow.mapTo(mutableListOf()) { it.copy(newLabelFlags = newLabelFlags) })
@@ -331,9 +333,11 @@ class KeyboardParser(private val params: KeyboardParams, private val context: Co
     }
 
     // some layouts have numbers hardcoded in the main layout (pcqwerty as keys, and others as popups)
-    private fun hasBuiltInNumbers() = when (params.mId.subtype.mainLayoutName) {
-        "pcqwerty" -> true
-        "lao", "thai", "korean_sebeolsik_390", "korean_sebeolsik_final" -> params.mPopupKeyOrder.contains(POPUP_KEYS_LAYOUT)
+    private fun hasBuiltInNumbers() = when {
+        params.mId.subtype.mainLayoutName == "pcqwerty" -> true
+        LayoutParser.isGermanTabletPcLayout(params, context) -> true
+        params.mId.subtype.mainLayoutName in setOf("lao", "thai", "korean_sebeolsik_390", "korean_sebeolsik_final") ->
+            params.mPopupKeyOrder.contains(POPUP_KEYS_LAYOUT)
         else -> false
     }
 
