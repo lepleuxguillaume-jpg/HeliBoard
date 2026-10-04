@@ -8,29 +8,52 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+    timeout-minutes: 90
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Java 17
+      - name: Set up Java 21
         uses: actions/setup-java@v4
         with:
-          java-version: '17'
+          java-version: '21'
           distribution: 'temurin'
 
       - uses: gradle/actions/setup-gradle@v3
 
-      - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
+      # android-actions/setup-android@v3 is deliberately not used: it runs
+      # `sdkmanager tools`, a package that no longer exists in the SDK
+      # repository, which makes the step fail. The runner image already ships
+      # cmdline-tools, so we just locate and use it directly.
+      - name: Locate sdkmanager
+        id: sdk
+        run: |
+          set -eu
+          SDKMANAGER="$(ls -1 "$ANDROID_HOME"/cmdline-tools/*/bin/sdkmanager 2>/dev/null | head -1)"
+          if [ -z "$SDKMANAGER" ]; then
+            echo "::error::no sdkmanager found under $ANDROID_HOME"
+            ls -la "$ANDROID_HOME" || true
+            exit 1
+          fi
+          echo "Using $SDKMANAGER"
+          echo "sdkmanager=$SDKMANAGER" >> "$GITHUB_OUTPUT"
 
       - name: Install Android SDK and NDK packages
-        run: sdkmanager "platforms;android-37.0" "build-tools;37.0.0" "ndk;28.0.13004108"
+        run: |
+          set -eu
+          SDKMANAGER="${{ steps.sdk.outputs.sdkmanager }}"
+          yes | "$SDKMANAGER" --licenses > /dev/null 2>&1 || true
+          "$SDKMANAGER" \
+            "platform-tools" \
+            "platforms;android-37.0" \
+            "build-tools;37.0.0" \
+            "ndk;28.0.13004108"
 
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
       - name: Build APK
-        run: ./gradlew :app:assembleDebugNoMinify
+        run: ./gradlew :app:assembleDebugNoMinify --stacktrace
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
